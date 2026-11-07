@@ -129,8 +129,10 @@ async def init_download_manager(user_login: str):
 
     await DownloadManager.load_remote_resources(
         linguist="https://cdn.jsdelivr.net/gh/github/linguist@master/lib/linguist/languages.yml",
-        waka_latest=f"{EM.WAKATIME_API_URL}users/current/stats/last_7_days?api_key={EM.WAKATIME_API_KEY}",
-        waka_all=f"{EM.WAKATIME_API_URL}users/current/stats/all_time?api_key={EM.WAKATIME_API_KEY}",
+        # fix =========================================================================
+        waka_latest=f"{EM.WAKATIME_API_URL}users/current/stats/last_7_days",
+        waka_all=f"{EM.WAKATIME_API_URL}users/current/stats/all_time",
+        # fix =========================================================================
         github_stats=f"https://github-contributions.vercel.app/api/v1/{user_login}",
     )
 
@@ -168,8 +170,17 @@ class DownloadManager:
             if isinstance(existing, dict):
                 continue
             # Schedule the coroutine as a Task so it can be cancelled/inspected later
-            DownloadManager._REMOTE_RESOURCES_CACHE[resource] = asyncio.create_task(DownloadManager._client.get(url))
-
+            # fix =========================================================================
+            headers = (
+                {"Authorization": f"Bearer {EM.WAKATIME_API_KEY}"}
+                if resource.startswith("waka_")
+                else {}
+            )
+            
+            DownloadManager._REMOTE_RESOURCES_CACHE[resource] = asyncio.create_task(
+                DownloadManager._client.get(url, headers=headers)
+            )
+            # fix =========================================================================
     @staticmethod
     async def close_remote_resources():
         """
